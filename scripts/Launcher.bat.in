@@ -1,0 +1,25 @@
+@echo off
+setlocal
+title ClickToDo Chrome Redirect
+if /i "%~1"=="/selftest" (set "CTD_ACTION=7" & goto run)
+if /i "%~1"=="/status" (set "CTD_ACTION=4" & goto run)
+if not "%~1"=="" (echo Supported arguments: /selftest /status & exit /b 2)
+echo ClickToDo Chrome Redirect
+echo 1. Install or update (Run as administrator)
+echo 2. Uninstall redirect (Run as administrator)
+echo 3. Test default search (run normally)
+echo 4. Show status
+echo 5. Roll back previous program (Run as administrator)
+echo 6. Exit
+choice /c 123456 /n /m "Select [1-6]: "
+set "CTD_ACTION=%errorlevel%"
+if "%CTD_ACTION%"=="6" exit /b 0
+:run
+set "CTD_SELF=%~f0"
+powershell.exe -NoProfile -Command "$s=[IO.File]::ReadAllText($env:CTD_SELF); & ([scriptblock]::Create(($s -split '(?m)^:POWERSHELL\r?\n',2)[1])) -Action $env:CTD_ACTION"
+set "CTD_EXIT=%errorlevel%"
+if not "%~1"=="" exit /b %CTD_EXIT%
+echo.
+pause
+exit /b %CTD_EXIT%
+:POWERSHELL

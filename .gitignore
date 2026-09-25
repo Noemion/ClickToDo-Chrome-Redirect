@@ -1,0 +1,7 @@
+*.exe
+*.pdb
+*.log
+*.reg
+state*.json
+work/
+.DS_Store
