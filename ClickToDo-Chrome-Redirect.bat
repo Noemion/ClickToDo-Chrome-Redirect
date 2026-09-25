@@ -2,12 +2,15 @@
 rem Template only. Build.ps1 appends the PowerShell and C# payload below.
 rem Keep variables local so running this BAT does not change the caller's session.
 setlocal
-title ClickToDo Chrome Redirect
+rem Build.ps1 substitutes the repository VERSION; no adjacent file is needed.
+set "CTD_VERSION=0.1.1"
+title ClickToDo Chrome Redirect v%CTD_VERSION%
+echo ClickToDo Chrome Redirect v%CTD_VERSION%
 rem Noninteractive modes return an exit code without pausing for input.
+if /i "%~1"=="/version" exit /b 0
 if /i "%~1"=="/selftest" (set "CTD_ACTION=7" & goto run)
 if /i "%~1"=="/status" (set "CTD_ACTION=4" & goto run)
-if not "%~1"=="" (echo Supported arguments: /selftest /status & exit /b 2)
-echo ClickToDo Chrome Redirect
+if not "%~1"=="" (echo Supported arguments: /version /selftest /status & exit /b 2)
 echo 1. Install or update (Run as administrator)
 echo 2. Uninstall redirect (Run as administrator)
 echo 3. Test default search (run normally)
@@ -41,6 +44,9 @@ param([ValidateSet('1','2','3','4','5','7')][string]$Action = '4')
 # Treat cmdlet failures as terminating errors so later setup steps do not run
 # after a failed write. Native compiler/reg.exe exit codes are checked separately.
 $ErrorActionPreference = 'Stop'
+# The build embeds this value; it is the downloaded BAT's version, not proof
+# that the machine's installed executable has been upgraded to the same version.
+$scriptVersion = '0.1.1'
 $source = @'
 // Forwarding pipeline: IFEO arguments -> first HTTP(S) URL -> optional Bing query
 // conversion -> one quoted Chrome argument. This program runs only on demand;
@@ -53,6 +59,11 @@ using System.IO;
 using System.Text;
 using System.Runtime.InteropServices;
 using System.Windows.Forms;
+// Build.ps1 injects assembly/file/product version attributes from VERSION here.
+// Metadata allows status checks without executing the installed program.
+[assembly: System.Reflection.AssemblyVersion("0.1.1.0")]
+[assembly: System.Reflection.AssemblyFileVersion("0.1.1.0")]
+[assembly: System.Reflection.AssemblyInformationalVersion("0.1.1")]
 public static class PwaRedirect {
     // These Win32 imports are used only by the quoting self-test. Windows passes
     // a command-line string to a child process, so test with a real Windows parser
@@ -205,6 +216,16 @@ public static class PwaRedirect {
 }
 '@
 
+# Read file metadata without running the EXE. Early scripts did not write version
+# resources, so report them honestly as legacy instead of borrowing this BAT's
+# version. The same helper is used for the live EXE and rollback backup.
+function Get-ProgramVersion([string]$Path) {
+    if (!(Test-Path -LiteralPath $Path -PathType Leaf)) { return 'not installed' }
+    $info = [Diagnostics.FileVersionInfo]::GetVersionInfo($Path)
+    if ([string]::IsNullOrWhiteSpace($info.ProductVersion) -or $info.ProductVersion -eq '0.0.0.0') { return 'unknown (legacy build)' }
+    return $info.ProductVersion
+}
+
 # Only machine-changing actions require elevation. Do not auto-elevate: the
 # caller chooses the account and sees the usual Windows elevation prompt.
 function Assert-Administrator {
@@ -259,6 +280,10 @@ function Compile-Redirect([string]$SourcePath, [string]$OutputPath) {
     if (!(Test-Path -LiteralPath $compiler)) { throw '.NET Framework C# compiler was not found.' }
     & $compiler /nologo /target:winexe /platform:x64 /reference:System.Windows.Forms.dll ("/out:" + $OutputPath) $SourcePath
     if ($LASTEXITCODE -ne 0) { throw 'Compilation failed.' }
+    # A successful compile must also carry the version shown by this installer.
+    # Check both the display version and the four-part Windows file version.
+    $metadata = [Diagnostics.FileVersionInfo]::GetVersionInfo($OutputPath)
+    if ($metadata.ProductVersion -ne $scriptVersion -or $metadata.FileVersion -ne "$scriptVersion.0") { throw 'Compiled executable version does not match this installer.' }
     $test = Start-Process -FilePath $OutputPath -ArgumentList '--self-test' -Wait -PassThru
     if ($test.ExitCode -ne 0) { throw "Redirect self-tests failed (exit $($test.ExitCode))." }
 }
@@ -327,6 +352,9 @@ try {
     if ($Action -eq '4') {
         # Diagnostics are read-only and work without elevation. File existence
         # alone is not proof that Windows actually routes a launch to the helper.
+        Write-Host "Script version: $scriptVersion"
+        Write-Host "Installed program version: $(Get-ProgramVersion $exe)"
+        Write-Host "Previous program version: $(Get-ProgramVersion $previous)"
         Write-Host "Helper present: $(Test-Path -LiteralPath $target)"
         Write-Host "Program present: $(Test-Path -LiteralPath $exe)"
         Write-Host "Restore state present: $(Test-Path -LiteralPath $statePath)"
@@ -370,7 +398,7 @@ try {
         if (!(Test-Path -LiteralPath $previous)) { throw 'No previous version exists. Rollback requires an earlier update.' }
         Copy-Item -LiteralPath $previous -Destination $candidate -Force
         [IO.File]::Replace($candidate,$exe,$null)
-        Write-Host 'Previous program restored. Registry configuration unchanged.'
+        Write-Host "Previous program restored: $(Get-ProgramVersion $exe). Registry configuration unchanged."
         exit 0
     }
     # From here onward Action is 1. Validate the known launch route and Chrome
@@ -445,6 +473,7 @@ try {
         }
         Write-Host 'Installed successfully.'
     }
+    Write-Host "Installed program version: $(Get-ProgramVersion $exe)"
     Write-Host 'Bing web searches use the Chrome profile default search engine; normal URLs are unchanged.'
     Write-Host 'Close this elevated window. Run normally, choose 3, then test Click to Do itself.'
 # Surface errors in the BAT window and return a failing exit code to callers/CI.

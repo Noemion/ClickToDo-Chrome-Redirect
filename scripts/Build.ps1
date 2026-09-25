@@ -3,18 +3,32 @@
 param([switch]$Check)
 $ErrorActionPreference = 'Stop'
 $root = Split-Path -Parent $PSScriptRoot
+# VERSION is the single source for the launcher, status output and EXE metadata.
+# Use a numeric major.minor.patch version; the fourth Windows file-version field
+# is always zero. Restrict components to values accepted by the C# compiler.
+$version = [IO.File]::ReadAllText((Join-Path $root 'VERSION')).Trim()
+if ($version -notmatch '^(0|[1-9][0-9]{0,4})\.(0|[1-9][0-9]{0,4})\.(0|[1-9][0-9]{0,4})$' -or
+    @($version.Split('.') | Where-Object { [int]$_ -gt 65534 }).Count) { throw 'VERSION must contain major.minor.patch with components from 0 to 65534.' }
 $source = [IO.File]::ReadAllText((Join-Path $root 'src\PwaRedirect.cs'))
+$attributes = @"
+[assembly: System.Reflection.AssemblyVersion("$version.0")]
+[assembly: System.Reflection.AssemblyFileVersion("$version.0")]
+[assembly: System.Reflection.AssemblyInformationalVersion("$version")]
+"@
+$source = $source.Replace('// VERSION_ATTRIBUTES', $attributes.TrimEnd())
 $setup = [IO.File]::ReadAllText((Join-Path $root 'src\Setup.ps1'))
 # A single-quoted PowerShell here-string preserves C# quotes, backslashes and
 # dollar signs literally. Its closing delimiter must be on a separate line.
 $embedded = '$source = @' + "'`n" + $source.TrimEnd() + "`n'@"
 $setup = $setup.Replace('# EMBED_SOURCE', $embedded)
+$setup = $setup.Replace('__PROJECT_VERSION__', $version)
 # Parse the combined payload, not just Setup.ps1: embedding can otherwise create
 # a syntactically broken installer even when the separate files look valid.
 $tokens = $null; $parseErrors = $null
 [void][Management.Automation.Language.Parser]::ParseInput($setup,[ref]$tokens,[ref]$parseErrors)
 if ($parseErrors.Count) { throw ($parseErrors | Out-String) }
 $header = [IO.File]::ReadAllText((Join-Path $root 'scripts\Launcher.bat.in')).TrimEnd()
+$header = $header.Replace('__PROJECT_VERSION__', $version)
 # Normalize all inputs to Windows newlines for cmd.exe. ASCII avoids depending
 # on the user's active console code page; reject characters instead of silently
 # replacing them when writing. The checked-in sources must obey this constraint.

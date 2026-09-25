@@ -78,6 +78,16 @@ HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Image File Execution Options\p
 
 ### 运行开发检查
 
+版本号统一保存在根目录 `VERSION`，采用 `主版本.次版本.修订号`。构建时注入 BAT 标题、菜单、状态输出及 EXE 产品版本；Windows 文件版本追加 `.0`。修改版本后同步更新 `CHANGELOG.md` 并重新生成 BAT。仅修改源码版本号不会自动升级本机已安装的 EXE，需运行菜单 1。状态读取 EXE 文件元数据，不会执行它，也不会把脚本版本误认为已安装版本。
+
+### 发布流程
+
+1. 修改 `VERSION` 并添加对应的 `CHANGELOG.md` 条目。
+2. 运行构建及测试，提交源码、版本文件和生成后的 BAT 到 `main`。
+3. `Release` 工作流在 Windows 上验证并准备 BAT 与 SHA-256 校验文件，通过后创建对应的 `v主版本.次版本.修订号` 标签和 GitHub Release。
+
+发布只在 `main` 上的 `VERSION` 变更时自动触发，也可以手动重试工作流。已存在的 Release 不会被覆盖；修正已发布版本应递增版本号。构建脚本自身不联网、不发布。仓库仅给发布任务授予 `contents: write` 权限；测试任务保持只读仓库权限。
+
 修改源码后，从仓库根目录运行：
 
 ```powershell

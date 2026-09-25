@@ -9,6 +9,9 @@ using System.IO;
 using System.Text;
 using System.Runtime.InteropServices;
 using System.Windows.Forms;
+// Build.ps1 injects assembly/file/product version attributes from VERSION here.
+// Metadata allows status checks without executing the installed program.
+// VERSION_ATTRIBUTES
 public static class PwaRedirect {
     // These Win32 imports are used only by the quoting self-test. Windows passes
     // a command-line string to a child process, so test with a real Windows parser

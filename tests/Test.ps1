@@ -3,6 +3,10 @@
 $ErrorActionPreference = 'Stop'
 $root = Split-Path -Parent $PSScriptRoot
 & (Join-Path $root 'scripts\Build.ps1') -Check
+# Query the built BAT as a user would; this mode must not require installation.
+$expectedVersion = [IO.File]::ReadAllText((Join-Path $root 'VERSION')).Trim()
+$versionOutput = & (Join-Path $root 'ClickToDo-Chrome-Redirect.bat') /version
+if ($LASTEXITCODE -ne 0 -or ($versionOutput -join "`n").Trim() -cne "ClickToDo Chrome Redirect v$expectedVersion") { throw 'BAT version display does not match VERSION.' }
 # Parse every maintained PowerShell file, including tests, without running each
 # file as an installer. Report all parser diagnostics for the first failing file.
 $scripts = Get-ChildItem -LiteralPath $root -Recurse -Filter '*.ps1'

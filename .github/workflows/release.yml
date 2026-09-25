@@ -1,0 +1,98 @@
+name: Release
+
+# A version bump is the publication boundary. Documentation-only commits do not
+# create releases. Manual dispatch can retry a failed publication for that version.
+on:
+  push:
+    branches: [main]
+    paths: [VERSION]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  package:
+    if: github.ref == 'refs/heads/main'
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Validate the distributable before publishing
+        shell: powershell
+        run: ./tests/Test.ps1
+      - name: Prepare BAT and checksum
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          New-Item -ItemType Directory release-assets | Out-Null
+          Copy-Item ClickToDo-Chrome-Redirect.bat release-assets/
+          $hash = (Get-FileHash release-assets/ClickToDo-Chrome-Redirect.bat -Algorithm SHA256).Hash.ToLowerInvariant()
+          "$hash  ClickToDo-Chrome-Redirect.bat" | Set-Content release-assets/SHA256SUMS.txt -Encoding ASCII
+      - uses: actions/upload-artifact@v4
+        with:
+          name: release-assets
+          path: release-assets/*
+          if-no-files-found: error
+
+  publish:
+    needs: package
+    runs-on: ubuntu-latest
+    permissions:
+      # Only this publication job may create the tag/release and upload assets.
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@v4
+        with:
+          name: release-assets
+          path: release-assets
+      - name: Create version tag and release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          version="$(tr -d '\r\n' < VERSION)"
+          tag="v${version}"
+
+          # Never replace a published version or upload different bytes under it.
+          if gh release view "$tag" >/dev/null 2>&1; then
+            echo "Release $tag already exists; nothing changed."
+            exit 0
+          fi
+
+          # Select only this version's changelog entry, not all historical notes.
+          awk -v version="$version" '
+            $0 == "## " version { found=1; next }
+            found && /^## / { exit }
+            found { print }
+          ' CHANGELOG.md > release-notes.md
+          test -s release-notes.md
+          cat >> release-notes.md <<'NOTES'
+
+          ### Download and update
+          Download **ClickToDo-Chrome-Redirect.bat** below. Run as administrator and choose **1** to install or update; then run normally and choose **3** to test. **4** reports both script and installed versions. Older unversioned programs appear as `unknown (legacy build)` until updated.
+
+          Requires x64 Windows and the retained Edge `pwahelper.exe` launch path. Automated checks do not replace end-to-end Click to Do testing; see the README for compatibility and recovery details. `SHA256SUMS.txt` verifies the downloaded BAT.
+          NOTES
+
+          # Refuse to silently retarget a separately created tag to another commit.
+          if gh api "repos/${GH_REPO}/git/ref/tags/${tag}" >/dev/null 2>&1; then
+            git fetch origin "refs/tags/${tag}:refs/tags/${tag}"
+            test "$(git rev-parse "${tag}^{commit}")" = "$GITHUB_SHA"
+          fi
+          gh release create "$tag" \
+            --target "$GITHUB_SHA" \
+            --title "$tag" \
+            --notes-file release-notes.md \
+            release-assets/ClickToDo-Chrome-Redirect.bat \
+            release-assets/SHA256SUMS.txt

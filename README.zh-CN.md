@@ -2,17 +2,21 @@
 
 [English](README.md)
 
+[正式发布](https://github.com/Noemion/ClickToDo-Chrome-Redirect/releases) · [当前源码版本](VERSION) · [更新日志](CHANGELOG.md)
+
 让 Windows 11「单击以执行」的「搜索互联网」使用 **Chrome 及其默认搜索引擎**，解决卸载 Edge 后跳转微软商店的问题。
 
 ## 使用方法
 
-**普通用户只需下载一个 [ClickToDo-Chrome-Redirect.bat](https://github.com/Noemion/ClickToDo-Chrome-Redirect/raw/refs/heads/main/ClickToDo-Chrome-Redirect.bat)，其他文件不用下载。**
+**普通用户只需从 [Releases 发布页](https://github.com/Noemion/ClickToDo-Chrome-Redirect/releases) 下载 `ClickToDo-Chrome-Redirect.bat`，其他仓库文件不用下载。** 每版附 SHA-256 校验值，并对应一个 Git 标签。[主分支 BAT](https://github.com/Noemion/ClickToDo-Chrome-Redirect/raw/refs/heads/main/ClickToDo-Chrome-Redirect.bat) 可能包含尚未发布的修改。
 
 1. 右键 BAT → **以管理员身份运行** → 选择 **1** 安装。
 2. 关闭窗口，普通双击 BAT → 选择 **3** 测试。
 3. 在 Click to Do 中使用「搜索互联网」，确认结果。
 
 升级也选 **1**；卸载选 **2**。安装无需下载额外依赖，也不会重新安装 Edge。
+
+启动时显示脚本版本；选 **4** 可另外查看已安装程序的版本，`/version` 可单独打印版本。旧程序没有版本信息时显示 `unknown (legacy build)`，选择 1 升级后即可显示。
 
 | 选项 | 功能 | 运行权限 |
 | --- | --- | --- |
@@ -41,10 +45,11 @@
 | `src/` | 转发程序和安装逻辑的源码 |
 | `scripts/` | 将源码生成完整 BAT 的工具和模板 |
 | `tests/` | 参数处理、生成一致性和恢复逻辑测试 |
-| `.github/workflows/` | GitHub 上运行的自动检查 |
+| `.github/workflows/` | GitHub 上运行的自动检查和版本发布 |
 | `docs/` | 原理、排错和开发说明 |
 | `README.md` / `README.zh-CN.md` | 英文 / 中文使用说明 |
 | `CHANGELOG.md` / `LICENSE` | 版本记录 / MIT 许可证 |
+| `VERSION` | 构建版本号的统一来源 |
 | `.gitignore` / `.gitattributes` | Git 忽略规则 / 文件换行规则 |
 
 BAT 已包含源码，运行时不依赖其他仓库文件。安装后的程序和恢复记录在 `%ProgramFiles%\ClickToDoPwaRedirect\`；**请先用菜单卸载，再删除安装目录**。建议保留下载的 BAT，方便以后管理。

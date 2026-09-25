@@ -2,12 +2,15 @@
 rem Template only. Build.ps1 appends the PowerShell and C# payload below.
 rem Keep variables local so running this BAT does not change the caller's session.
 setlocal
-title ClickToDo Chrome Redirect
+rem Build.ps1 substitutes the repository VERSION; no adjacent file is needed.
+set "CTD_VERSION=__PROJECT_VERSION__"
+title ClickToDo Chrome Redirect v%CTD_VERSION%
+echo ClickToDo Chrome Redirect v%CTD_VERSION%
 rem Noninteractive modes return an exit code without pausing for input.
+if /i "%~1"=="/version" exit /b 0
 if /i "%~1"=="/selftest" (set "CTD_ACTION=7" & goto run)
 if /i "%~1"=="/status" (set "CTD_ACTION=4" & goto run)
-if not "%~1"=="" (echo Supported arguments: /selftest /status & exit /b 2)
-echo ClickToDo Chrome Redirect
+if not "%~1"=="" (echo Supported arguments: /version /selftest /status & exit /b 2)
 echo 1. Install or update (Run as administrator)
 echo 2. Uninstall redirect (Run as administrator)
 echo 3. Test default search (run normally)
