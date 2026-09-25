@@ -1,57 +1,57 @@
 # ClickToDo Chrome Redirect
 
-[English](README.en.md)
+[简体中文](README.zh-CN.md)
 
-让 Windows 11「单击以执行」的「搜索互联网」使用 **Chrome 及其默认搜索引擎**，解决卸载 Edge 后跳转微软商店的问题。
+Open Windows 11 **Click to Do → Search the web** in **Chrome with its default search engine**, instead of the Edge Microsoft Store page after Edge is uninstalled.
 
-## 使用方法
+## Quick start
 
-**普通用户只需下载一个 [ClickToDo-Chrome-Redirect.bat](https://github.com/Noemion/ClickToDo-Chrome-Redirect/raw/refs/heads/main/ClickToDo-Chrome-Redirect.bat)，其他文件不用下载。**
+**Download only [ClickToDo-Chrome-Redirect.bat](https://github.com/Noemion/ClickToDo-Chrome-Redirect/raw/refs/heads/main/ClickToDo-Chrome-Redirect.bat). No other repository files are required.**
 
-1. 右键 BAT → **以管理员身份运行** → 选择 **1** 安装。
-2. 关闭窗口，普通双击 BAT → 选择 **3** 测试。
-3. 在 Click to Do 中使用「搜索互联网」，确认结果。
+1. Right-click the BAT → **Run as administrator** → choose **1** to install.
+2. Close that window, run the BAT normally → choose **3** to test.
+3. Use Click to Do's **Search the web** and confirm the result.
 
-升级也选 **1**；卸载选 **2**。安装无需下载额外依赖，也不会重新安装 Edge。
+Choose **1** again to update, or **2** to uninstall. Setup downloads no additional dependencies and does not reinstall Edge.
 
-| 选项 | 功能 | 运行权限 |
+| Option | Action | Permissions |
 | --- | --- | --- |
-| 1 | 安装 / 升级 | 管理员 |
-| 2 | 卸载转发 | 管理员 |
-| 3 | 测试默认搜索 | 普通运行 |
-| 4 | 查看状态 | 普通运行 |
-| 5 | 回滚到升级前的程序 | 管理员 |
-| 6 | 退出 | 任意 |
+| 1 | Install / update | Administrator |
+| 2 | Uninstall redirect | Administrator |
+| 3 | Test default search | Normal |
+| 4 | Show status | Normal |
+| 5 | Restore the program from before the last update | Administrator |
+| 6 | Exit | Either |
 
-## 适用条件
+## Requirements
 
-- **x64 Windows 11**，Chrome 安装在系统级 `Program Files` 目录中。
-- Edge 已卸载，但仍保留 `%ProgramFiles(x86)%\Microsoft\Edge\Application\pwahelper.exe`，且 Click to Do 实际调用它。
-- Windows PowerShell 5.1 和系统自带的 .NET Framework C# 编译器可用。
+- **x64 Windows 11**, with system-wide Chrome in Program Files.
+- Edge is removed, but `%ProgramFiles(x86)%\Microsoft\Edge\Application\pwahelper.exe` remains and is actually launched by Click to Do.
+- Windows PowerShell 5.1 and the built-in .NET Framework C# compiler.
 
-转发和默认搜索功能已在 **Windows 11 25H2（26200.9457）/ Click to Do 1000.26100.9457.0** 上验证。其他版本未经实机验证，ARM64 暂不支持。
+Forwarding and default search were verified on **Windows 11 25H2 (26200.9457) / Click to Do 1000.26100.9457.0**. Other versions are unverified; ARM64 is unsupported.
 
-**注意：** 本工具也会接管该路径下 `pwahelper.exe` 的其他启动用途；影响其他功能时请卸载。搜索引擎取决于 Chrome 使用的个人资料；普通网页链接仍按原网址打开。Windows 更新可能改变兼容性。
+**Note:** Other launches of that exact helper path are intercepted too; uninstall if this disrupts other features. The search engine comes from the profile Chrome selects. Ordinary URLs are opened unchanged. Windows updates may change compatibility.
 
-## 目录说明
+## Repository guide
 
-| 文件 / 目录 | 用途 |
+| File / directory | Purpose |
 | --- | --- |
-| `ClickToDo-Chrome-Redirect.bat` | **完整工具，普通用户只需这个文件** |
-| `src/` | 转发程序和安装逻辑的源码 |
-| `scripts/` | 将源码生成完整 BAT 的工具和模板 |
-| `tests/` | 参数处理、生成一致性和恢复逻辑测试 |
-| `.github/workflows/` | GitHub 上运行的自动检查 |
-| `docs/` | 原理、排错和开发说明 |
-| `README.md` / `README.en.md` | 中英文使用说明 |
-| `CHANGELOG.md` / `LICENSE` | 版本记录 / MIT 许可证 |
-| `.gitignore` / `.gitattributes` | Git 忽略规则 / 文件换行规则 |
+| `ClickToDo-Chrome-Redirect.bat` | **Complete tool; the only file end users need** |
+| `src/` | Forwarder and setup source code |
+| `scripts/` | Build script and launcher template |
+| `tests/` | Argument handling, artifact consistency and recovery tests |
+| `.github/workflows/` | Automated checks running on GitHub |
+| `docs/` | Implementation, troubleshooting and development notes |
+| `README.md` / `README.zh-CN.md` | English / Chinese usage guides |
+| `CHANGELOG.md` / `LICENSE` | Version history / MIT license |
+| `.gitignore` / `.gitattributes` | Git exclusions / line-ending rules |
 
-BAT 已包含源码，运行时不依赖其他仓库文件。安装后的程序和恢复记录在 `%ProgramFiles%\ClickToDoPwaRedirect\`；**请先用菜单卸载，再删除安装目录**。建议保留下载的 BAT，方便以后管理。
+The BAT embeds the source and does not depend on the other files at runtime. Installed files and restore state live in `%ProgramFiles%\ClickToDoPwaRedirect\`. **Uninstall through the menu before deleting that directory.** Keep the BAT for future management.
 
-## 更多说明
+## More information
 
-- [原理、常见问题与开发说明](docs/DEVELOPMENT.md)
-- [版本记录](CHANGELOG.md) · [反馈问题](https://github.com/Noemion/ClickToDo-Chrome-Redirect/issues) · [MIT 许可证](LICENSE)
+- [Technical and development notes (Chinese)](docs/DEVELOPMENT.md)
+- [Changelog](CHANGELOG.md) · [Report an issue](https://github.com/Noemion/ClickToDo-Chrome-Redirect/issues) · [MIT license](LICENSE)
 
-社区项目，与 Microsoft、Google 或 OpenAI 无关联。
+Independent community project, not affiliated with Microsoft, Google or OpenAI.

@@ -1,6 +1,6 @@
 # 原理、排错与开发说明
 
-[返回使用说明](../README.md)
+[返回中文使用说明](../README.zh-CN.md) · [English](../README.md)
 
 ## 工作原理
 
