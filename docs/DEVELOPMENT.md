@@ -66,6 +66,18 @@ HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Image File Execution Options\p
 
 ## 构建与验证
 
+### 建议的源码阅读顺序
+
+1. `scripts/Launcher.bat.in`：菜单如何映射到动作，BAT 如何读取自身内嵌的 PowerShell，以及退出码如何传回调用方。
+2. `src/Setup.ps1`：先看动作分发，再看检查、编译和恢复函数。`state.json` 保存的是**首次安装前**的状态，升级不能覆盖成已启用转发的状态。
+3. `src/PwaRedirect.cs`：按 `Main → Extract → BrowserInput → Quote → Process.Start` 理解一次转发。网址提取、搜索转换和 Windows 参数引用各自处理不同的问题。
+4. `tests/TestRegistry.ps1`：五种恢复场景说明哪些设置可以删除、哪些必须保留，以及半途失败的安装如何恢复。
+5. `scripts/Build.ps1` 和 `tests/Test.ps1`：理解如何生成单文件 BAT，以及如何检查生成文件和源码保持一致。
+
+各函数和关键分支的注释解释输入输出、设计原因、边界条件及失败处理。注释使用英文；会嵌入 BAT 的源码必须保持 ASCII，以避免不同 Windows 代码页引起乱码，测试中的中文使用 C# Unicode 转义。
+
+### 运行开发检查
+
 修改源码后，从仓库根目录运行：
 
 ```powershell

@@ -1,6 +1,9 @@
 name: Validate
+# Validate committed sources and the generated distribution on a Windows runner.
+# These checks never install the real IFEO filter or launch a browser.
 on: [push, pull_request, workflow_dispatch]
 permissions:
+  # Validation needs repository read access only; it does not publish artifacts.
   contents: read
 jobs:
   windows:

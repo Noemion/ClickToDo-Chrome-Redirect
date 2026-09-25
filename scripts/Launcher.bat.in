@@ -1,6 +1,9 @@
 @echo off
+rem Template only. Build.ps1 appends the PowerShell and C# payload below.
+rem Keep variables local so running this BAT does not change the caller's session.
 setlocal
 title ClickToDo Chrome Redirect
+rem Noninteractive modes return an exit code without pausing for input.
 if /i "%~1"=="/selftest" (set "CTD_ACTION=7" & goto run)
 if /i "%~1"=="/status" (set "CTD_ACTION=4" & goto run)
 if not "%~1"=="" (echo Supported arguments: /selftest /status & exit /b 2)
@@ -12,12 +15,18 @@ echo 4. Show status
 echo 5. Roll back previous program (Run as administrator)
 echo 6. Exit
 choice /c 123456 /n /m "Select [1-6]: "
+rem CHOICE returns the one-based position of the selected key as ERRORLEVEL.
 set "CTD_ACTION=%errorlevel%"
 if "%CTD_ACTION%"=="6" exit /b 0
 :run
+rem Pass this file path through the environment rather than interpolating it
+rem into PowerShell source, preserving spaces and special characters in paths.
 set "CTD_SELF=%~f0"
+rem Read only the payload after the exact marker line. Exit below prevents
+rem cmd.exe from interpreting any PowerShell or C# lines as batch commands.
 powershell.exe -NoProfile -Command "$s=[IO.File]::ReadAllText($env:CTD_SELF); & ([scriptblock]::Create(($s -split '(?m)^:POWERSHELL\r?\n',2)[1])) -Action $env:CTD_ACTION"
 set "CTD_EXIT=%errorlevel%"
+rem Save the payload result before PAUSE changes the process error level.
 if not "%~1"=="" exit /b %CTD_EXIT%
 echo.
 pause
